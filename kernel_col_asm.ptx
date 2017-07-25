@@ -1,0 +1,34 @@
+	.reg .u32 %mr<5>;
+	.reg .u64 %mrd<2>;
+	.reg .pred %p;
+	.reg .u64 %src_head;
+	.reg .u64 %dst_head;
+	.reg .u32 %loop;
+	.reg .f32 %buffer;
+
+	mov.s32 %mr0, %ctaid.x;
+	mov.s32 %mr1, %ntid.x;
+	mov.s32 %mr2, %tid.x;
+	mad.lo.s32 %mr3, %mr0, %mr1, %mr2;
+	mul.lo.s32 %mr4, %mr3, %2;
+	mul.wide.s32 %mrd0, %mr4, 4;
+	add.s64 %mrd0, %mrd0, %0;
+
+	mov.s64 %src_head, %1;
+	mov.s64 %dst_head, %mrd0;
+
+	setp.ge.s32 %p, %mr3, %3;
+	@%p bra END;
+
+	sub.s32 %loop, %2, 1;
+LOOP:
+	ld.global.f32 %buffer, [%src_head];
+	st.global.f32 [%dst_head], %buffer;
+	add.s64 %src_head, %src_head, 4;
+	add.s64 %dst_head, %dst_head, 4;
+	setp.eq.s32 %p, %loop, 0;
+	@%p bra END;
+	sub.s32 %loop,%loop,1;
+	bra LOOP;
+END:
+
