@@ -1,9 +1,9 @@
 #include <iostream>
 #include <chrono>
 
-const int N = 1000;
-const int batch_size = 25;
-const int output_size = 20;
+const int N = 100000;
+const int batch_size = 32;
+const int output_size = 14*14;
 const int blocks = 256;
 
 __global__ void kernel_row(float* bias_matrix,float* bias,int output_size,int batch_size){
@@ -45,6 +45,20 @@ int main(){
 	cudaMallocHost( (void**)&h_bias, sizeof(float) * output_size);
 	cudaMallocHost( (void**)&h_bias_matrix, sizeof(float) * output_size * batch_size);
 	for(int i = 0;i < output_size;i++) h_bias[i] = (i+1)/100.0f;
+
+	/*cudaMemset( d_bias_matrix, 0, sizeof(float) * output_size * batch_size);
+	cudaMemcpy( d_bias, h_bias, sizeof(float) * output_size , cudaMemcpyHostToDevice);
+	{
+		auto start = std::chrono::system_clock::now();
+		for(int i = 0;i < N;i++){
+			for(int j = 0;j < batch_size;j++) cudaMemcpy( d_bias_matrix + j * output_size, d_bias, sizeof(float) * output_size, cudaMemcpyDeviceToDevice );
+		}
+		cudaThreadSynchronize();
+		auto stop = std::chrono::system_clock::now();
+		float calc_time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count()/(float)N;
+		std::cout<<"cudaMemcpy copy : "<<calc_time<<" [us]"<<std::endl;
+	}*/
+
 	cudaMemset( d_bias_matrix, 0, sizeof(float) * output_size * batch_size);
 	cudaMemcpy( d_bias, h_bias, sizeof(float) * output_size , cudaMemcpyHostToDevice);
 
@@ -96,12 +110,12 @@ int main(){
 	}
 
 	cudaMemcpy( h_bias_matrix, d_bias_matrix, sizeof(float) * output_size * batch_size, cudaMemcpyDeviceToHost);
-	for(int j = 0;j < output_size;j++){
+	/*for(int j = 0;j < output_size;j++){
 		for(int i = 0;i < batch_size;i++){
 			printf("%.3f ",h_bias_matrix[i * output_size + j]);
 		}
 		printf("\n");
-	}
+	}*/
 
 	cudaFree( d_bias );
 	cudaFreeHost( h_bias );
