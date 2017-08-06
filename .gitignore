@@ -1,2 +1,3 @@
 a.out
 .*.swp
+git rm make-bias-matrix.ptx
